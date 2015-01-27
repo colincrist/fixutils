@@ -19,4 +19,4 @@ usage: org.messageforge.fixutil.bin2fix.BinaryToFIX
 -pcap                Indicates this is a pcap file and needs reassembly
 -sessionDict <arg>   Session dictionary (or both if pre FIX5.0)
 ```
-Read more on the wiki [BinaryToFIX]
+Read more on wiki...
