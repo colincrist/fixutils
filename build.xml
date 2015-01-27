@@ -1,5 +1,5 @@
 
-<project name="iswap-tests" default="jar">
+<project name="fixutils" default="jar">
 	<property file="build.properties" />
 
 	<target name="init">
