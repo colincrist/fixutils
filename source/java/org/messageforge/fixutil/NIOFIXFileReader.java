@@ -84,7 +84,7 @@ public class NIOFIXFileReader implements Runnable, FIXMessageReader, AutoCloseab
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see tp.fix.io.FIXMessageReader#read()
+	 * @see FIXMessageReader#read()
 	 */
 	@Override
 	public Message read() throws IOException {
@@ -94,7 +94,7 @@ public class NIOFIXFileReader implements Runnable, FIXMessageReader, AutoCloseab
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see tp.fix.io.FIXMessageReader#read(long)
+	 * @see FIXMessageReader#read(long)
 	 */
 	@Override
 	public Message read(final long timeout) {
@@ -324,7 +324,7 @@ public class NIOFIXFileReader implements Runnable, FIXMessageReader, AutoCloseab
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see tp.fix.io.FIXMessageReader#close()
+	 * @see FIXMessageReader#close()
 	 */
 	@Override
 	public void close() throws IOException {
