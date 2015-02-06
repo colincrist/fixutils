@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Fixutils : FIX Utilities and Tools">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Fixutils</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/colincrist/fixutils">View on GitHub</a>
+
+          <h1 id="project_title">Fixutils</h1>
+          <h2 id="project_tagline">FIX Utilities and Tools</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/colincrist/fixutils/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/colincrist/fixutils/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>
+<a id="binarytofix" class="anchor" href="#binarytofix" aria-hidden="true"><span class="octicon octicon-link"></span></a>BinaryToFIX</h2>
+
+<p>This command line application can read FIX messages from log files or packet captures (.pcap) and writes CSV containing a row per message with just the fields you want in each row. If the message does not have that field in then a blank is written. </p>
+
+<pre><code>usage: org.messageforge.fixutil.bin2fix.BinaryToFIX
+-appDict &lt;arg&gt;       Application dictionary
+-appOnly             Filter session messages
+-compIDs &lt;arg&gt;       Filter Sender/TargetCompIDs (comma separated)
+-dir &lt;arg&gt;           Directory (all files will be parsed
+-fields &lt;arg&gt;        Fields (comma separated). Use "Bytes" to display the
+                      raw message
+-filter &lt;arg&gt;        Packet filter
+-in &lt;arg&gt;            Input file
+-millis              Convert latency to milliseconds
+-msgTypes &lt;arg&gt;      Filter message types (comma separated)
+-out &lt;arg&gt;           Output file
+-pcap                Indicates this is a pcap file and needs reassembly
+-sessionDict &lt;arg&gt;   Session dictionary (or both if pre FIX5.0)
+</code></pre>
+
+<h3>
+<a id="packet-capture-example" class="anchor" href="#packet-capture-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Packet Capture Example</h3>
+
+<p>Say we have a pcap file containing lots of traffic. We've recorded the capture with tcpdump or maybe a download from something like a Corvil appliance. We know there is a FIX session on port 3031 that contains order flow. Lets pull it out, decode it and see whats happening - you will need to have [[libpcap|<a href="http://www.tcpdump.org/">http://www.tcpdump.org/</a>]] installed for this to work.</p>
+
+<pre><code>BinaryToFIX -in capture.pcap -out messages.csv 
+            -fields MsgType,SenderCompID,TargetCompID,SecurityID,ClOrdID,OrderID,ExecType,ClRejReason,Text
+            -filter "tcp port 3031"
+</code></pre>
+
+<p>The results in the following CSV:</p>
+
+<pre><code>"Capture Timestamp","Capture Micros","Latency","MsgType","SenderCompID","TargetCompID","SecurityID","ClOrdID","OrderID","ExecType","CxlRejReason","Text"
+"20150127-10:29:00.626","1422354540626175","","D","BANKA","BROKER","EUR 2Y","37c9df75-b0c","","","",""
+"20150127-10:29:00.637","1422354540637598","11423","8","BROKER","BANKA","EUR 2Y","37c9df75-b0c","20150127422.0","0","",""
+"20150127-10:29:00.662","1422354540662951","","D","BANKA","BROKER","EUR 3Y","76c781cb-cfb","","","",""
+"20150127-10:29:00.665","1422354540665779","2828","8","BROKER","BANKA","EUR 3Y","76c781cb-cfb","20150127423.0","0","",""
+"20150127-10:29:00.710","1422354540710473","","D","BANKA","BROKER","EUR 4Y","1b8e2f94-132","","","",""
+"20150127-10:29:00.713","1422354540713233","2760","8","BROKER","BANKA","EUR 4Y","1b8e2f94-132","20150127424.0","0","",""
+"20150127-10:29:00.741","1422354540741122","","D","BANKA","BROKER","EUR 5Y","20b335f2-36c","","","",""
+"20150127-10:29:00.742","1422354540742088","","D","BANKA","BROKER","EUR 2Y","9b7cba00-cca","","","",""
+"20150127-10:29:00.743","1422354540743266","2144","8","BROKER","BANKA","EUR 5Y","20b335f2-36c","20150127425.0","0","",""
+</code></pre>
+
+<p>For any message that has at least one of the fields set that we define we get a row containing the fields and values if they're set - if the field is not present we just get a blank. </p>
+
+<p>As the input is a pcap file, there is a capture timestamp in microseconds. This allows BinaryToFIX to give a latency between any <code>NewOrderSingle</code> or <code>OrderCancelReplaceRequest</code> and its corresponding <code>ExecutionReport</code> (correlated by <code>ClOrdID</code>) - you get the latency on the row with the <code>ExecutionReport</code></p>
+
+<p>The filter is a libpcap filter expression and its important that the filter matches a unique FIX TCP/IP stream as BinaryToFIX uses a simple way to deal with fragmented packets at the moment.</p>
+
+<p>For the latency figures to be meaningful, one must ensure the capture was timely especially when dealing with a high throughput. A <code>tcpdump</code> on the local machine to the FIX engine may be better than nothing but it will affect the load on that machine and NIC. Better to offload the capture to a network sniffer or a dedicated machine with NIC designed for packet capture.</p>
+
+<h3>
+<a id="log-file-example" class="anchor" href="#log-file-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Log File Example</h3>
+
+<p>Most FIX engines log messages to a file in their raw format and sometimes that file contains other logging between the messages. BinaryToFIX can search and extract FIX messages from logs files before using QuickFIX to parse and extract the fields you're interested in. Any non-FIX data in the logs is quietly ignored.</p>
+
+<pre><code>BinaryToFIX -in logfile.log -out messages.csv 
+            -fields MsgType,SenderCompID,TargetCompID,SecurityID,ClOrdID,OrderID,ExecType,ClRejReason,Text
+</code></pre>
+
+<p>The only difference in the output CSV is that as we don't have any capture timestamps, no latency calculations can be made so those columns are missing from the output.</p>
+
+<h3>
+<a id="building-and-using" class="anchor" href="#building-and-using" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building and Using</h3>
+
+<p>You'll need a pcap library on the machine you run BinaryToFIX on - <a href="http://www.winpcap.org">http://www.winpcap.org</a> or <a href="http://www.tcpdump.org">http://www.tcpdump.org</a>. The project has a simple ant <code>build.xml</code> file that builds the project in the <code>target</code> directory.</p>
+
+<p>The code includes Eclipse <code>.project</code> and <code>.classpath</code> files.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Fixutils maintained by <a href="https://github.com/colincrist">colincrist</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
